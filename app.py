@@ -10,6 +10,7 @@ from collections import deque
 import cv2 as cv
 import numpy as np
 import mediapipe as mp
+import tensorflow as tf
 
 from utils import CvFpsCalc
 from model import KeyPointClassifier
@@ -150,14 +151,13 @@ def main():
                 # print(general_landmark_list)
 
                 # Conversion to relative coordinates / normalized coordinates
+
                 pre_processed_general_landmark_list = pre_process_general_landmark(
                     general_landmark_list)
-                # print(pre_processed_general_landmark_list)
 
                 pre_processed_general_hand_landmark_history_list = pre_process_general_hand_landmark_history(
                     general_hand_landmark_history
                 )
-                # print(pre_processed_general_hand_landmark_history_list)
 
                 # Write to the dataset file
                 logging_csv(number, mode, pre_processed_general_landmark_list,
@@ -294,12 +294,9 @@ def pre_process_general_hand_landmark_history(hand_landmark_history):
     temp_hand_landmark_history = copy.deepcopy(hand_landmark_history)
 
     # Convert to relative coordinates
-    base_x, base_y = 0, 0
+    base_x, base_y = temp_hand_landmark_history[0][0][0], temp_hand_landmark_history[0][0][1]
     for index, hand in enumerate(temp_hand_landmark_history):
         for point_id in range(len(hand)):
-            if index == 0:
-                base_x, base_y = hand[0][0], hand[0][1]
-
             temp_hand_landmark_history[index][point_id][0] = temp_hand_landmark_history[index][point_id][0] - base_x
             temp_hand_landmark_history[index][point_id][1] = temp_hand_landmark_history[index][point_id][1] - base_y
 
