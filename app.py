@@ -74,6 +74,7 @@ def main():
     keypoint_classifier = KeyPointClassifier()
 
     point_history_classifier = PointHistoryClassifier()
+    
 
     # Read labels ###########################################################
     with open('model/keypoint_classifier/keypoint_classifier_label.csv',
@@ -98,7 +99,7 @@ def main():
     specific_hand_landmark_history = deque(maxlen=HISTORY_LEN)
 
     # Finger gesture history ################################################
-    # finger_gesture_history = deque(maxlen=HISTORY_LEN)
+    finger_gesture_history = deque(maxlen=HISTORY_LEN)
 
     #  ########################################################################
     mode = 0
@@ -170,19 +171,20 @@ def main():
                 general_hand_landmark_history.append(general_landmark_list)
 
                 # Finger gesture classification
-                # finger_gesture_id = 0
-                # point_history_len = len(pre_processed_point_history_list)
-                # if point_history_len == (HISTORY_LEN * 2 * 21):
-                #     finger_gesture_id = point_history_classifier(pre_processed_point_history_list)
-                    # if finger_gesture_id == -1:
-                    #     print("Not recog")
-                    # else:
-                    #     print(point_history_classifier_labels[finger_gesture_id])
+                finger_gesture_id = 4
+                point_history_len = get_len(general_hand_landmark_history)
+                print(point_history_len)
+                if point_history_len == HISTORY_LEN:
+                    finger_gesture_id = point_history_classifier(pre_processed_general_hand_landmark_history_list)
+                    if finger_gesture_id == -1:
+                        print("Not recog")
+                    else:
+                        print(point_history_classifier_labels[finger_gesture_id])
 
                 # Calculates the gesture IDs in the latest detection
-                # finger_gesture_history.append(finger_gesture_id)
-                # most_common_fg_id = Counter(
-                #     finger_gesture_history).most_common()
+                finger_gesture_history.append(finger_gesture_id)
+                most_common_fg_id = Counter(
+                    finger_gesture_history).most_common()
 
                 # Drawing part
                 debug_image = draw_bounding_rect(debug_image, brect)
@@ -192,13 +194,13 @@ def main():
                     mp_hands.HAND_CONNECTIONS
                 )
                         
-                # debug_image = draw_info_text(
-                #     debug_image,
-                #     brect,
-                #     handedness,
-                #     keypoint_classifier_labels[hand_sign_id],
-                #     point_history_classifier_labels[most_common_fg_id[0][0]],
-                # )
+                debug_image = draw_info_text(
+                    debug_image,
+                    brect,
+                    handedness,
+                    'Not',
+                    point_history_classifier_labels[most_common_fg_id[0][0]],
+                )
         else:
             specific_hand_landmark_history.append([[0, 0]] * 21)
             general_hand_landmark_history.append([[0, 0]] * 21)
@@ -308,6 +310,18 @@ def pre_process_general_hand_landmark_history(hand_landmark_history):
             res += [temp_hand_landmark_history[index][point_id][1]]
     return res
 
+def get_len(general_hand_landmark_history):
+    # Convert to relative coordinates
+    res = 16
+    for index, hand in enumerate(general_hand_landmark_history):
+        is_all_zero = True
+        for point_id in range(len(hand)):
+            if general_hand_landmark_history[index][point_id][0] != '0' or general_hand_landmark_history[index][point_id][1] != '0':
+                is_all_zero = False
+                break
+        if is_all_zero:
+            res -= 1
+    return res 
 
 def logging_csv(number, mode, landmark_list, point_history_list):
     if mode == 0:
